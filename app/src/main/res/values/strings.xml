@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TripTracker</string>
+    <string name="google_maps_key">AIzaSyD2bf-nZI1iYGenLP_qOo_7ZMsPXdA4YZM</string>
+
+    <string name="notification_channel_name">Tracking</string>
+    <string name="notification_channel_desc">Foreground tracking updates</string>
+    <string name="notification_title">Trip tracking in progress</string>
+    <string name="notification_pause">Pause</string>
+    <string name="notification_resume">Resume</string>
+    <string name="notification_stop">Stop</string>
+</resources>

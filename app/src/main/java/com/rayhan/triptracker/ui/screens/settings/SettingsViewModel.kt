@@ -1,0 +1,24 @@
+package com.rayhan.triptracker.ui.screens.settings
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.rayhan.triptracker.data.repo.SettingsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class SettingsViewModel @Inject constructor(private val repo: SettingsRepository) : ViewModel() {
+
+    val interval =
+        repo.intervalSeconds.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 5)
+    val background =
+        repo.backgroundEnabled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setInterval(sec: Int) = viewModelScope.launch { repo.setInterval(sec) }
+    fun setBackground(enabled: Boolean) = viewModelScope.launch { repo.setBackground(enabled) }
+}
