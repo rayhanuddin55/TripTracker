@@ -10,7 +10,6 @@ import javax.inject.Singleton
 @Singleton
 class TripRepository @Inject constructor(private val db: AppDatabase) {
     fun observeTrips(): Flow<List<Trip>> = db.tripDao().observeTrips()
-    suspend fun getTrips(): List<Trip> = db.tripDao().getTrips()
 
     suspend fun startTrip(startTime: Long = System.currentTimeMillis()): Long {
         return db.tripDao().insert(Trip(startTime = startTime))
@@ -32,6 +31,5 @@ class TripRepository @Inject constructor(private val db: AppDatabase) {
         }
     }
 
-    fun observePoints(tripId: Long) = db.trackPointDao().observeByTrip(tripId)
     suspend fun points(tripId: Long) = db.trackPointDao().getByTrip(tripId)
 }

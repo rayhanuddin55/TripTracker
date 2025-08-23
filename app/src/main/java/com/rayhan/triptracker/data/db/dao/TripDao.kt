@@ -1,6 +1,9 @@
 package com.rayhan.triptracker.data.db.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
 import com.rayhan.triptracker.data.db.entity.Trip
 import kotlinx.coroutines.flow.Flow
 
@@ -13,9 +16,6 @@ interface TripDao {
 
     @Query("SELECT * FROM trips ORDER BY startTime DESC")
     fun observeTrips(): Flow<List<Trip>>
-
-    @Query("SELECT * FROM trips ORDER BY startTime DESC")
-    suspend fun getTrips(): List<Trip>
 
     @Query("SELECT * FROM trips WHERE id = :id")
     suspend fun getById(id: Long): Trip?
