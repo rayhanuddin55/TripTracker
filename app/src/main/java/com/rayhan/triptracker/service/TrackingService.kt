@@ -5,30 +5,33 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.os.IBinder
 import android.util.Log
-import androidx.compose.runtime.collectAsState
 import androidx.core.app.NotificationCompat
-import com.google.android.gms.location.*
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.rayhan.triptracker.MainActivity
 import com.rayhan.triptracker.R
-import com.rayhan.triptracker.data.db.AppDatabase
 import com.rayhan.triptracker.data.db.entity.TrackPoint
 import com.rayhan.triptracker.data.repo.SettingsRepository
 import com.rayhan.triptracker.data.repo.TripRepository
-import com.rayhan.triptracker.ui.screens.settings.SettingsScreen
 import com.rayhan.triptracker.util.LatLng
 import com.rayhan.triptracker.util.haversineMeters
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
@@ -36,6 +39,7 @@ import javax.inject.Inject
 class TrackingService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var fused: FusedLocationProviderClient
+    private var locationUpdateJob: Job? = null
 
     @Inject
     lateinit var tripRepo: TripRepository
@@ -84,6 +88,11 @@ class TrackingService : Service() {
         super.onTaskRemoved(rootIntent)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.cancel()
+    }
+
     private fun startTracking() {
         if (currentTripId != null) return
         scope.launch {
@@ -100,13 +109,15 @@ class TrackingService : Service() {
         paused = pause
         updateNotification()
 
+        val currentTime = System.currentTimeMillis()
+
         if (pause) {
             fused.removeLocationUpdates(locationCb)
-            lastPauseStart = System.currentTimeMillis()
+            lastPauseStart = currentTime
         } else {
             // Resume
             lastPauseStart?.let {
-                totalPausedMs += System.currentTimeMillis() - it
+                totalPausedMs += currentTime - it
             }
             lastPauseStart = null
             requestLocationUpdates()
@@ -126,7 +137,8 @@ class TrackingService : Service() {
     }
 
     private fun requestLocationUpdates() {
-        scope.launch {
+        locationUpdateJob?.cancel()
+        locationUpdateJob = scope.launch {
             settingsRepository.intervalSeconds.distinctUntilChanged().collect { intervalSec ->
                 if (currentTripId == null) return@collect
                 Log.d("TrackingService", "Requesting location updates every $intervalSec seconds")
@@ -141,6 +153,7 @@ class TrackingService : Service() {
                 try {
                     fused.requestLocationUpdates(req, locationCb, mainLooper)
                 } catch (e: SecurityException) {
+                    Log.e("TrackingService", "Request Update Error", e)
                 }
                 updateNotification()
             }
@@ -155,13 +168,16 @@ class TrackingService : Service() {
                 if (paused) return@launch
                 val id = currentTripId ?: return@launch
                 val loc: Location = result.lastLocation ?: return@launch
+
+                val currentTime = System.currentTimeMillis()
+
                 val cur = LatLng(loc.latitude, loc.longitude)
                 val last = lastLatLng
                 if (last != null) {
                     val d = haversineMeters(last, cur) // Calculate distance in meters
                     if (d >= 2.0) {
                         distanceMeters += d
-                        lastMoveTime = System.currentTimeMillis()
+                        lastMoveTime = currentTime
                     }
                 }
                 lastLatLng = cur
@@ -170,7 +186,7 @@ class TrackingService : Service() {
                 tripRepo.appendPoint(
                     TrackPoint(
                         tripId = id,
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = currentTime,
                         lat = cur.lat,
                         lng = cur.lng,
                         speedMps = loc.speed
@@ -186,7 +202,7 @@ class TrackingService : Service() {
                     )
                 )
 
-                if (System.currentTimeMillis() - lastMoveTime > stationaryWindowMs) {
+                if (currentTime - lastMoveTime > stationaryWindowMs) {
                     stopTracking()
                 }
 
