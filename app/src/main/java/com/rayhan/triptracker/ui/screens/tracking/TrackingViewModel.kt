@@ -1,23 +1,21 @@
 package com.rayhan.triptracker.ui.screens.tracking
 
 import android.app.Application
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.util.Log
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rayhan.triptracker.service.TrackingService
 import com.rayhan.triptracker.service.TrackingSession
 import com.rayhan.triptracker.util.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,32 +37,48 @@ class TrackingViewModel @Inject constructor(private val app: Application) : View
     private var accumulatedTimeMs = 0L
     private var lastStartTime = 0L
 
+    private var timerJob: Job? = null
+
     init {
         //Get updated value from service
         viewModelScope.launch {
             TrackingSession.updates.collect { update ->
-                _state.value = _state.value.copy(
-                    speedMps = update.speedMps,
-                    distanceMeters = update.distanceMeters,
-                    currentLatLng = update.currentLatLng,
+                _state.update {
+                    _state.value.copy(
+                        speedMps = update.speedMps,
+                        distanceMeters = update.distanceMeters,
+                        currentLatLng = update.currentLatLng,
 
-                    )
-            }
-        }
-
-        // Update time
-        viewModelScope.launch {
-            while (true) {
-                if (_state.value.isTracking && !_state.value.isPaused) {
-                    _state.value = _state.value.copy(
-                        elapsedMs = accumulatedTimeMs + (System.currentTimeMillis() - lastStartTime)
-                    )
+                        )
                 }
-                delay(1000)
             }
         }
     }
 
+    //Start timer when tracking starts
+    @OptIn(ObsoleteCoroutinesApi::class)
+    private fun startTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            ticker(delayMillis = 1000, initialDelayMillis = 0).consumeEach {
+                _state.update { state ->
+                    if (state.isTracking && !state.isPaused) {
+                        state.copy(
+                            elapsedMs = accumulatedTimeMs + (System.currentTimeMillis() - lastStartTime)
+                        )
+                    } else state
+                }
+
+            }
+        }
+    }
+
+    private fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
+    }
+
+    // Tracking Start
     fun start() {
         app.startService(Intent(app, TrackingService::class.java).apply {
             action = TrackingService.ACTION_START
@@ -75,29 +89,40 @@ class TrackingViewModel @Inject constructor(private val app: Application) : View
             isPaused = false,
             startTime = lastStartTime,
         )
+        startTimer()
     }
 
+    // Tracking pause handle
     fun pauseResume() {
         val paused = !_state.value.isPaused
         app.startService(Intent(app, TrackingService::class.java).apply {
             action = if (paused) TrackingService.ACTION_PAUSE else TrackingService.ACTION_RESUME
         })
 
-        val currentTime = System.currentTimeMillis()
-
-        if (paused) {
-            accumulatedTimeMs += currentTime - lastStartTime
-        } else {
-            lastStartTime = currentTime
-        }
+        updateAccumulatedTime(paused)
 
         _state.value = _state.value.copy(isPaused = paused)
     }
 
+    // Find accumulated time to calculate paused time
+    private fun updateAccumulatedTime(paused: Boolean) {
+        val now = System.currentTimeMillis()
+        if (paused) {
+            accumulatedTimeMs += now - lastStartTime
+        } else {
+            lastStartTime = now
+        }
+    }
+
+    // Tracking stop
     fun stop() {
         app.startService(Intent(app, TrackingService::class.java).apply {
             action = TrackingService.ACTION_STOP
         })
+
+        accumulatedTimeMs = 0L
+        lastStartTime = 0L
+        stopTimer()
         _state.value = TrackingState()
     }
 

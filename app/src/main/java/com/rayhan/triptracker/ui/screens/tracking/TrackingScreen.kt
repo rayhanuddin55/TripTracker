@@ -142,7 +142,7 @@ fun TrackingScreen(padding: PaddingValues) {
         ) {
             Text("Speed: $speedText km/h")
             Text("Distance: $distanceText m")
-            Text("Time: ${timeText}s")
+            Text("Time: ${timeText}")
         }
         Row(
             Modifier
