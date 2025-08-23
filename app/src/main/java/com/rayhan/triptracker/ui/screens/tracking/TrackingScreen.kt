@@ -1,38 +1,44 @@
 package com.rayhan.triptracker.ui.screens.tracking
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Context
 import android.os.Build
-import android.os.Looper
-import android.widget.Toast
-import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.*
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.coroutineScope
+import com.rayhan.triptracker.util.toast
 import kotlinx.coroutines.launch
-import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -75,6 +81,7 @@ fun TrackingScreen(padding: PaddingValues) {
                 )
             }
         } catch (e: SecurityException) {
+            Log.e("TrackingScreen", "Location unknown", e)
         }
     }
 
@@ -107,6 +114,10 @@ fun TrackingScreen(padding: PaddingValues) {
         }
     }
 
+    val speedText = remember(state.speedMps) { "%.1f".format(state.speedMps * 3.6) }
+    val distanceText = remember(state.distanceMeters) { "%.0f".format(state.distanceMeters) }
+    val timeText = remember(state.elapsedMs) { "${state.elapsedMs / 1000}s" }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -129,9 +140,9 @@ fun TrackingScreen(padding: PaddingValues) {
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Speed: ${"%.1f".format(state.speedMps * 3.6)} km/h")
-            Text("Distance: ${"%.0f".format(state.distanceMeters)} m")
-            Text("Time: ${state.elapsedMs / 1000}s")
+            Text("Speed: $speedText km/h")
+            Text("Distance: $distanceText m")
+            Text("Time: ${timeText}s")
         }
         Row(
             Modifier
@@ -142,7 +153,7 @@ fun TrackingScreen(padding: PaddingValues) {
             Button(
                 onClick = {
                     vm.start()
-                    Toast.makeText(context, "Tracking started", Toast.LENGTH_SHORT).show()
+                    context.toast("Tracking started")
                 },
                 enabled = !state.isTracking,
                 modifier = Modifier.weight(1f)
@@ -151,7 +162,7 @@ fun TrackingScreen(padding: PaddingValues) {
                 onClick = {
                     vm.pauseResume()
                     val msg = if (state.isPaused) "Tracking resumed" else "Tracking paused"
-                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    context.toast(msg)
                 },
                 enabled = state.isTracking,
                 modifier = Modifier.weight(1f)
@@ -159,7 +170,7 @@ fun TrackingScreen(padding: PaddingValues) {
             Button(
                 onClick = {
                     vm.stop()
-                    Toast.makeText(context, "Tracking stopped", Toast.LENGTH_SHORT).show()
+                    context.toast("Tracking stopped")
                 },
                 enabled = state.isTracking,
                 modifier = Modifier.weight(1f)
