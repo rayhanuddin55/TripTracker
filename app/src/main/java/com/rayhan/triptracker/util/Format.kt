@@ -1,10 +1,10 @@
 package com.rayhan.triptracker.util
 
-// To m or km
+// m or km
 fun formatDistance(meters: Double): String =
     if (meters < 1000) "${"%.0f".format(meters)} m" else "${"%.2f".format(meters / 1000)} km"
 
-// To h:m:s
+// h:m:s
 fun formatDuration(ms: Long): String {
     val s = ms / 1000
     val h = s / 3600

@@ -1,10 +1,14 @@
 package com.rayhan.triptracker.util
 
-import kotlin.math.*
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 data class LatLng(val lat: Double, val lng: Double)
 
-// Calculate distance between two lat/lng points in meters
+// Calculate distance between two lat/lng points in meters using Haversine formula
 fun haversineMeters(a: LatLng, b: LatLng): Double {
     val R = 6371000.0
     val dLat = Math.toRadians(b.lat - a.lat)
