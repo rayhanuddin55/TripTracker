@@ -34,5 +34,6 @@ Kotlin · Jetpack Compose · Hilt · Room · DataStore · Google Play Services (
 ## Notes
 
 - All data is stored locally (Room, DataStore).
+- I spent around 25 hours completing this task.
 
 ---
