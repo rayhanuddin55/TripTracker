@@ -1,10 +1,8 @@
 package com.rayhan.triptracker.ui.screens.history
 
 import android.app.Application
-import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.rayhan.triptracker.data.db.AppDatabase
 import com.rayhan.triptracker.data.repo.ExportRepository
 import com.rayhan.triptracker.data.repo.TripRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,7 +22,7 @@ class HistoryViewModel @Inject constructor(
     val trips = repo.observeTrips()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun export(tripId: Long, onComplete: (Uri?) -> Unit = {}) {
+    fun export(tripId: Long, onComplete: (String?) -> Unit = {}) {
         viewModelScope.launch {
             try {
                 // Fetch the points for the trip
@@ -35,8 +33,8 @@ class HistoryViewModel @Inject constructor(
                 }
 
                 // Export to CSV
-                val uri = exportRepository.exportTripToCsv(tripId, points)
-                onComplete(uri)
+                val fileName = exportRepository.exportTripToCsv(tripId, points)
+                onComplete(fileName)
             } catch (e: Exception) {
                 e.printStackTrace()
                 onComplete(null)

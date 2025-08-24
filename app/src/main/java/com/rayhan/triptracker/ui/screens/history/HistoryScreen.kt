@@ -77,13 +77,11 @@ fun HistoryScreen(padding: PaddingValues) {
                         }
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = {
-                            vm.export(t.id, onComplete = { uri ->
-                                if (uri != null) {
-                                    context.toast("Exported to $uri")
+                            vm.export(t.id, onComplete = { fileName ->
+                                if (fileName != null) {
+                                    context.toast("Exported to $fileName")
                                 }
                             })
-
-
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.ExitToApp,

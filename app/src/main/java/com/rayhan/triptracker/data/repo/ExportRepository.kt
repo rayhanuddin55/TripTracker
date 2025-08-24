@@ -2,7 +2,6 @@ package com.rayhan.triptracker.data.repo
 
 import android.content.ContentValues
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -18,7 +17,7 @@ import javax.inject.Singleton
 class ExportRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    suspend fun exportTripToCsv(tripId: Long, points: List<TrackPoint>): Uri? =
+    suspend fun exportTripToCsv(tripId: Long, points: List<TrackPoint>): String? =
         withContext(Dispatchers.IO) {
             val filename = "trip_$tripId.csv"
 
@@ -47,7 +46,7 @@ class ExportRepository @Inject constructor(
                             null
                         )
                     }
-                    uri
+                    filename
                 } else {
                     // Before Android Q
                     val downloads = Environment.getExternalStoragePublicDirectory(
@@ -57,7 +56,7 @@ class ExportRepository @Inject constructor(
 
                     val file = File(downloads, filename)
                     file.printWriter().use { writeCsv(points, it) }
-                    Uri.fromFile(file)
+                    filename
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

@@ -229,18 +229,18 @@ class TrackingService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        val stopAction = NotificationCompat.Action(
-            0, getString(R.string.notification_stop),
-            PendingIntent.getService(this, 2, Intent(this, TrackingService::class.java).apply {
-                action = ACTION_STOP
-            }, PendingIntent.FLAG_IMMUTABLE)
-        )
+//        val stopAction = NotificationCompat.Action(
+//            0, getString(R.string.notification_stop),
+//            PendingIntent.getService(this, 2, Intent(this, TrackingService::class.java).apply {
+//                action = ACTION_STOP
+//            }, PendingIntent.FLAG_IMMUTABLE)
+//        )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setContentTitle(getString(R.string.notification_title))
             .setContentIntent(pendingIntent)
-            .addAction(stopAction)
+//            .addAction(stopAction)
             .setOngoing(true)
             .build()
     }
