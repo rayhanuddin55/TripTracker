@@ -19,13 +19,12 @@ Kotlin · Jetpack Compose · Hilt · Room · DataStore · Google Play Services (
 
 ## Setup
 
-1. Add Google Maps API key (Already added).
-2. Grant runtime permissions:
+1. Grant runtime permissions:
     - `ACCESS_FINE_LOCATION`
     - `ACCESS_BACKGROUND_LOCATION`
     - `FOREGROUND_SERVICE`
     - `POST_NOTIFICATIONS`
-3. Build & run on a device or emulator with Google Play services.
+2. Build & run on a device or emulator with Google Play services.
 
 ## Testing
 
