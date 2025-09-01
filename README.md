@@ -19,7 +19,7 @@ Kotlin · Jetpack Compose · Hilt · Room · DataStore · Google Play Services (
 
 ## Setup
 
-1. Add Google Maps API key in strings.xml.
+1. Add Google Maps API key in local.properties (MAPS_API_KEY=AIz.....).
 
 2. Grant runtime permissions:
     - `ACCESS_FINE_LOCATION`

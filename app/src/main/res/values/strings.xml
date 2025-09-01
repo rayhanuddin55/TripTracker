@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">TripTracker</string>
-    <string name="google_maps_key">MAP_API_KEY</string>
 
     <string name="notification_channel_name">Tracking</string>
     <string name="notification_channel_desc">Foreground tracking updates</string>
