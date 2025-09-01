@@ -1,4 +1,4 @@
-# TripTracker (Android Interview Task)
+# TripTracker
 
 Lightweight Android app for tracking trips using a foreground service and Google’s Fused Location
 Provider. Trips are stored locally with Room and can be viewed/exported from a history screen. UI
